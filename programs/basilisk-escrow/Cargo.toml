@@ -1,0 +1,20 @@
+[package]
+name = "basilisk-escrow"
+version = "1.0.0"
+description = "Basilisk Escrow Smart Contract - Trustless agent-to-agent coordination payments"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "basilisk_escrow"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.30.1"
+anchor-spl = "0.30.1"

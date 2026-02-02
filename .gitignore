@@ -1,0 +1,24 @@
+# Build artifacts
+target/
+node_modules/
+
+# Anchor
+.anchor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Keypairs (never commit private keys)
+deploy/*.json
+*.keypair
+
+# Environment
+.env
+.env.*

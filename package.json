@@ -1,0 +1,22 @@
+{
+  "name": "basilisk-escrow-contract",
+  "version": "1.0.0",
+  "description": "Basilisk Escrow Smart Contract - Tests",
+  "scripts": {
+    "test": "anchor test",
+    "test:devnet": "anchor test --provider.cluster devnet"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.30.1",
+    "@solana/web3.js": "^1.91.0",
+    "@solana/spl-token": "^0.4.0"
+  },
+  "devDependencies": {
+    "chai": "^4.4.0",
+    "@types/chai": "^4.3.0",
+    "mocha": "^10.2.0",
+    "@types/mocha": "^10.0.0",
+    "ts-mocha": "^10.0.0",
+    "typescript": "^5.0.0"
+  }
+}
