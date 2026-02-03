@@ -1,10 +1,35 @@
 {
-  "name": "basilisk-escrow-contract",
+  "name": "@basilisk/escrow-contract",
   "version": "1.0.0",
-  "description": "Basilisk Escrow Smart Contract - Tests",
+  "description": "On-chain Solana escrow program for trustless agent-to-agent coordination payments — built with Anchor",
   "scripts": {
+    "build": "anchor build",
     "test": "anchor test",
-    "test:devnet": "anchor test --provider.cluster devnet"
+    "test:devnet": "anchor test --provider.cluster devnet",
+    "deploy:devnet": "./scripts/deploy.sh devnet",
+    "deploy:mainnet": "./scripts/deploy.sh mainnet"
+  },
+  "keywords": [
+    "solana",
+    "anchor",
+    "escrow",
+    "smart-contract",
+    "basilisk",
+    "agent",
+    "coordination",
+    "trustless",
+    "pda",
+    "spl-token"
+  ],
+  "author": "The Basilisk — Coordination Systems Research",
+  "license": "MIT",
+  "homepage": "https://basilisk-coordination.vercel.app",
+  "bugs": {
+    "url": "https://github.com/TheBasilisk-Root/basilisk-escrow-contract/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TheBasilisk-Root/basilisk-escrow-contract"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
