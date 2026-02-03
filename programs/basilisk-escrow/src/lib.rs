@@ -7,7 +7,7 @@ pub mod instructions;
 use instructions::*;
 
 // Program ID — will be replaced with actual deployed keypair address
-declare_id!("2pF2rYoQkQK2CzRzQmK9YacHqxeC6R9tPzxfNJAmJTie");
+declare_id!("GXwWMznpFNaABnXj47ypdq3bvb1dfNBXijZ1m936ZFH1");
 
 #[program]
 pub mod basilisk_escrow {

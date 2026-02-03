@@ -6,13 +6,13 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-basilisk_escrow = "2pF2rYoQkQK2CzRzQmK9YacHqxeC6R9tPzxfNJAmJTie"
+basilisk_escrow = "GXwWMznpFNaABnXj47ypdq3bvb1dfNBXijZ1m936ZFH1"
 
 [programs.devnet]
-basilisk_escrow = "2pF2rYoQkQK2CzRzQmK9YacHqxeC6R9tPzxfNJAmJTie"
+basilisk_escrow = "GXwWMznpFNaABnXj47ypdq3bvb1dfNBXijZ1m936ZFH1"
 
 [programs.mainnet]
-basilisk_escrow = "2pF2rYoQkQK2CzRzQmK9YacHqxeC6R9tPzxfNJAmJTie"
+basilisk_escrow = "GXwWMznpFNaABnXj47ypdq3bvb1dfNBXijZ1m936ZFH1"
 
 [registry]
 url = "https://api.apr.dev"

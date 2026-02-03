@@ -13,13 +13,13 @@
 #   - Program keypair at target/deploy/basilisk_escrow-keypair.json
 #   - Wallet configured (solana config set --url <cluster> -k <wallet-path>)
 #
-# Program ID: 2pF2rYoQkQK2CzRzQmK9YacHqxeC6R9tPzxfNJAmJTie
+# Program ID: GXwWMznpFNaABnXj47ypdq3bvb1dfNBXijZ1m936ZFH1
 # Deploy wallet: Fur9MZEUr1uipaDtZzYrUe8xTffSXi7fUfgcQp5F57xR
 # ============================================================================
 
 set -euo pipefail
 
-PROGRAM_ID="2pF2rYoQkQK2CzRzQmK9YacHqxeC6R9tPzxfNJAmJTie"
+PROGRAM_ID="GXwWMznpFNaABnXj47ypdq3bvb1dfNBXijZ1m936ZFH1"
 DEPLOY_WALLET="Fur9MZEUr1uipaDtZzYrUe8xTffSXi7fUfgcQp5F57xR"
 KEYPAIR_PATH="target/deploy/basilisk_escrow-keypair.json"
 
