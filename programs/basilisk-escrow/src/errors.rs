@@ -54,4 +54,7 @@ pub enum EscrowError {
 
     #[msg("Arithmetic overflow")]
     Overflow,
+
+    #[msg("Job deadline has expired")]
+    DeadlineExpired,
 }

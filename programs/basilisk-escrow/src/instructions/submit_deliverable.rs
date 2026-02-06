@@ -26,6 +26,12 @@ pub fn handler(
         EscrowError::InvalidStatus
     );
 
+    let clock = Clock::get()?;
+    require!(
+        clock.unix_timestamp <= job.deadline,
+        EscrowError::DeadlineExpired
+    );
+
     job.deliverable = combined;
     job.status = JobStatus::UnderReview;
 

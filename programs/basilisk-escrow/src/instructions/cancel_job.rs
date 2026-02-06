@@ -14,7 +14,10 @@ use crate::errors::EscrowError;
 pub fn handler(ctx: Context<CancelJob>) -> Result<()> {
     let job = &mut ctx.accounts.job;
 
-    require!(job.status == JobStatus::Open, EscrowError::CannotCancel);
+    let clock = Clock::get()?;
+    let is_open = job.status == JobStatus::Open;
+    let is_expired = job.status == JobStatus::InProgress && clock.unix_timestamp > job.deadline;
+    require!(is_open || is_expired, EscrowError::CannotCancel);
 
     // ── Refund to requester ─────────────────────────────────────────────
     let job_id_bytes = job.job_id.as_bytes();
