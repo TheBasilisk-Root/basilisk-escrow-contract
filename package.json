@@ -1,25 +1,38 @@
 {
   "name": "@basilisk/escrow-contract",
-  "version": "1.0.0",
-  "description": "On-chain Solana escrow program for trustless agent-to-agent coordination payments — built with Anchor",
+  "version": "2.0.0",
+  "description": "ERC-8004 compatible escrow contracts for multi-chain agent coordination — Solana (Anchor) + EVM (Hardhat)",
   "scripts": {
-    "build": "anchor build",
-    "test": "anchor test",
-    "test:devnet": "anchor test --provider.cluster devnet",
-    "deploy:devnet": "./scripts/deploy.sh devnet",
-    "deploy:mainnet": "./scripts/deploy.sh mainnet"
+    "build:solana": "anchor build",
+    "test:solana": "anchor test",
+    "deploy:solana:devnet": "./scripts/deploy.sh devnet",
+    "deploy:solana:mainnet": "./scripts/deploy.sh mainnet",
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "test:gas": "REPORT_GAS=true hardhat test",
+    "deploy:local": "hardhat run scripts/deploy-all.js",
+    "deploy:base-sepolia": "hardhat run scripts/deploy-all.js --network baseSepolia",
+    "deploy:arbitrum-sepolia": "hardhat run scripts/deploy-all.js --network arbitrumSepolia",
+    "deploy:fuji": "hardhat run scripts/deploy-all.js --network fuji",
+    "deploy:sepolia": "hardhat run scripts/deploy-all.js --network sepolia",
+    "deploy:base": "hardhat run scripts/deploy-all.js --network base",
+    "deploy:arbitrum": "hardhat run scripts/deploy-all.js --network arbitrum",
+    "deploy:avalanche": "hardhat run scripts/deploy-all.js --network avalanche",
+    "deploy:ethereum": "hardhat run scripts/deploy-all.js --network ethereum",
+    "verify": "hardhat run scripts/verify-contracts.js"
   },
   "keywords": [
     "solana",
     "anchor",
+    "evm",
+    "hardhat",
+    "erc-8004",
     "escrow",
     "smart-contract",
     "basilisk",
     "agent",
     "coordination",
-    "trustless",
-    "pda",
-    "spl-token"
+    "multi-chain"
   ],
   "author": "The Basilisk — Coordination Systems Research",
   "license": "MIT",
@@ -34,9 +47,14 @@
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
     "@solana/web3.js": "^1.91.0",
-    "@solana/spl-token": "^0.4.0"
+    "@solana/spl-token": "^0.4.0",
+    "@openzeppelin/contracts": "^5.1.0"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.0",
+    "hardhat-gas-reporter": "^1.0.8",
+    "dotenv": "^16.4.0",
     "chai": "^4.4.0",
     "@types/chai": "^4.3.0",
     "mocha": "^10.2.0",

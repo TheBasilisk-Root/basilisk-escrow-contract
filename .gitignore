@@ -7,6 +7,12 @@ dist/
 .anchor/
 test-ledger/
 
+# Hardhat
+cache/
+artifacts/
+typechain-types/
+deployments/
+
 # IDE
 .idea/
 .vscode/
@@ -25,6 +31,7 @@ deploy/*.json
 # Environment
 .env
 .env.*
+!.env.example
 .env.local
 
 # Logs
