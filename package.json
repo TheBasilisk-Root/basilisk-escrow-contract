@@ -19,7 +19,14 @@
     "deploy:arbitrum": "hardhat run scripts/deploy-all.js --network arbitrum",
     "deploy:avalanche": "hardhat run scripts/deploy-all.js --network avalanche",
     "deploy:ethereum": "hardhat run scripts/deploy-all.js --network ethereum",
-    "verify": "hardhat run scripts/verify-contracts.js"
+    "verify": "hardhat run scripts/verify-contracts.js",
+    "preflight": "hardhat run scripts/preflight-check.js",
+    "preflight:testnets": "CHAINS=all-testnets hardhat run scripts/preflight-check.js",
+    "deploy:all-mainnets": "CHAINS=all-mainnets node scripts/deploy-multichain.js",
+    "deploy:all-testnets": "CHAINS=all-testnets node scripts/deploy-multichain.js",
+    "deploy:all": "CHAINS=all node scripts/deploy-multichain.js",
+    "verify:all-mainnets": "CHAINS=all-mainnets node scripts/verify-multichain.js",
+    "verify:all-testnets": "CHAINS=all-testnets node scripts/verify-multichain.js"
   },
   "keywords": [
     "solana",
