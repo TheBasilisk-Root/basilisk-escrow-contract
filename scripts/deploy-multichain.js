@@ -90,9 +90,9 @@ async function main() {
     const startTime = Date.now();
 
     try {
-      // Run deploy-all.js with the target network via hardhat
+      // Run deploy-chain.js with the target network via hardhat
       const output = execSync(
-        `npx hardhat run scripts/deploy-all.js --network ${chain}`,
+        `npx hardhat run scripts/deploy-chain.js --network ${chain}`,
         {
           cwd: path.join(__dirname, ".."),
           encoding: "utf8",
@@ -167,6 +167,9 @@ async function main() {
       const dep = registry.deployments[r.chain];
       console.log(`${prefix}_ESCROW_ADDRESS=${dep.contracts.BasiliskEscrow}`);
       console.log(`${prefix}_IDENTITY_ADDRESS=${dep.contracts.IdentityRegistry}`);
+      if (dep.contracts.BasiliskMultiSig) {
+        console.log(`${prefix}_MULTISIG_ADDRESS=${dep.contracts.BasiliskMultiSig}`);
+      }
     }
 
     console.log(`\n${BOLD}Next step:${RESET} Verify contracts on block explorers:`);

@@ -200,7 +200,7 @@ const { job } = await sdk.jobs.create({
 
 ## Fee Structure
 
-The contracts implement pure escrow with no on-chain fee extraction. The 5% platform fee (2% buyback, 2% ops, 1% verification) is applied at the application layer before funding escrow. This keeps contracts simple and auditable.
+The contracts implement pure escrow with no on-chain fee extraction. The 5% platform fee (4% multisig, 1% verification) is applied at the application layer before funding escrow. This keeps contracts simple and auditable.
 
 ## Project Structure
 

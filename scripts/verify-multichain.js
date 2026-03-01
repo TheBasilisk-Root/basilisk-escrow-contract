@@ -86,20 +86,36 @@ async function main() {
 
     console.log(`${BOLD}${chain}${RESET} ${DIM}(chain ${dep.chainId})${RESET}`);
 
+    let allOk = true;
+
+    // 0. BasiliskMultiSig — (signers[], threshold) — if present
+    if (contracts.BasiliskMultiSig) {
+      process.stdout.write(`  BasiliskMultiSig (${contracts.BasiliskMultiSig.slice(0, 10)}...)  `);
+      const r0 = verify(chain, contracts.BasiliskMultiSig, "BasiliskMultiSig", [
+        config.multisigSigners,
+        config.multisigThreshold,
+      ]);
+      console.log(r0.ok ? `${GREEN}✓${RESET}` : `${RED}✗ ${r0.error}${RESET}`);
+      if (!r0.ok) allOk = false;
+    }
+
     // 1. IdentityRegistry — no constructor args
     process.stdout.write(`  IdentityRegistry (${contracts.IdentityRegistry.slice(0, 10)}...)  `);
     const r1 = verify(chain, contracts.IdentityRegistry, "IdentityRegistry", []);
     console.log(r1.ok ? `${GREEN}✓${RESET}` : `${RED}✗ ${r1.error}${RESET}`);
+    if (!r1.ok) allOk = false;
 
     // 2. ReputationRegistry — (identityAddr)
     process.stdout.write(`  ReputationRegistry (${contracts.ReputationRegistry.slice(0, 10)}...)  `);
     const r2 = verify(chain, contracts.ReputationRegistry, "ReputationRegistry", [contracts.IdentityRegistry]);
     console.log(r2.ok ? `${GREEN}✓${RESET}` : `${RED}✗ ${r2.error}${RESET}`);
+    if (!r2.ok) allOk = false;
 
     // 3. ValidationRegistry — (identityAddr)
     process.stdout.write(`  ValidationRegistry (${contracts.ValidationRegistry.slice(0, 10)}...)  `);
     const r3 = verify(chain, contracts.ValidationRegistry, "ValidationRegistry", [contracts.IdentityRegistry]);
     console.log(r3.ok ? `${GREEN}✓${RESET}` : `${RED}✗ ${r3.error}${RESET}`);
+    if (!r3.ok) allOk = false;
 
     // 4. BasiliskEscrow — (admin, arbitrator, treasury, ops, feeBps, identityAddr)
     process.stdout.write(`  BasiliskEscrow (${contracts.BasiliskEscrow.slice(0, 10)}...)  `);
@@ -112,10 +128,11 @@ async function main() {
       contracts.IdentityRegistry,
     ]);
     console.log(r4.ok ? `${GREEN}✓${RESET}` : `${RED}✗ ${r4.error}${RESET}`);
+    if (!r4.ok) allOk = false;
 
     // Update registry
     if (registry.deployments[chain]) {
-      registry.deployments[chain].verified = r1.ok && r2.ok && r3.ok && r4.ok;
+      registry.deployments[chain].verified = allOk;
       registry.deployments[chain].verifiedAt = new Date().toISOString();
     }
 

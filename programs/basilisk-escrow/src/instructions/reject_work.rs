@@ -2,7 +2,10 @@ use anchor_lang::prelude::*;
 use crate::state::*;
 use crate::errors::EscrowError;
 
-/// Requester rejects submitted work, opening a dispute.
+/// Requester rejects submitted work, sending it back for revision.
+///
+/// The agent can resubmit an improved deliverable. If the requester
+/// wants to escalate to arbitration, they should use `open_dispute`.
 ///
 /// SECURITY FIX: Added PDA seed validation and has_one = requester
 /// to prevent unauthorized rejection.
@@ -14,17 +17,10 @@ pub fn handler(ctx: Context<RejectWork>, reason: String) -> Result<()> {
         EscrowError::InvalidStatus
     );
 
-    let new_deliverable = format!("{} | REJECTED: {}", job.deliverable, reason);
-    require!(
-        new_deliverable.len() <= MAX_DELIVERABLE_LEN,
-        EscrowError::DeliverableTooLong
-    );
+    // Move back to InProgress so agent can resubmit
+    job.status = JobStatus::InProgress;
 
-    job.status = JobStatus::Disputed;
-    job.disputed = true;
-    job.deliverable = new_deliverable;
-
-    msg!("Job {} rejected - dispute opened", job.job_id);
+    msg!("Job {} work rejected, returned for revision: {}", job.job_id, reason);
     Ok(())
 }
 

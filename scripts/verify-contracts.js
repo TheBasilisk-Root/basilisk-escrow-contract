@@ -18,9 +18,23 @@ async function main() {
   console.log(`Verifying contracts on ${network}...`);
   console.log();
 
+  // ── 0. BasiliskMultiSig (if present) ───────────────────────────────
+  if (contracts.BasiliskMultiSig) {
+    try {
+      console.log("0/5 Verifying BasiliskMultiSig...");
+      await hre.run("verify:verify", {
+        address: contracts.BasiliskMultiSig,
+        constructorArguments: [config.multisigSigners, config.multisigThreshold],
+      });
+      console.log("     Verified.");
+    } catch (e) {
+      console.log(`     ${e.message.includes("Already Verified") ? "Already verified." : e.message}`);
+    }
+  }
+
   // ── 1. IdentityRegistry (no constructor args) ───────────────────────
   try {
-    console.log("1/4 Verifying IdentityRegistry...");
+    console.log("1/5 Verifying IdentityRegistry...");
     await hre.run("verify:verify", {
       address: contracts.IdentityRegistry,
       constructorArguments: [],
@@ -32,7 +46,7 @@ async function main() {
 
   // ── 2. ReputationRegistry ────────────────────────────────────────────
   try {
-    console.log("2/4 Verifying ReputationRegistry...");
+    console.log("2/5 Verifying ReputationRegistry...");
     await hre.run("verify:verify", {
       address: contracts.ReputationRegistry,
       constructorArguments: [contracts.IdentityRegistry],
@@ -44,7 +58,7 @@ async function main() {
 
   // ── 3. ValidationRegistry ────────────────────────────────────────────
   try {
-    console.log("3/4 Verifying ValidationRegistry...");
+    console.log("3/5 Verifying ValidationRegistry...");
     await hre.run("verify:verify", {
       address: contracts.ValidationRegistry,
       constructorArguments: [contracts.IdentityRegistry],
@@ -56,7 +70,7 @@ async function main() {
 
   // ── 4. BasiliskEscrow ───────────────────────────────────────────────
   try {
-    console.log("4/4 Verifying BasiliskEscrow...");
+    console.log("4/5 Verifying BasiliskEscrow...");
     await hre.run("verify:verify", {
       address: contracts.BasiliskEscrow,
       constructorArguments: [

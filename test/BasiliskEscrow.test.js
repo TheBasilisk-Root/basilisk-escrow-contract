@@ -279,7 +279,7 @@ describe("BasiliskEscrow", function () {
         await escrow.connect(requester).setVerifier(JOB_ID, verifier.address);
       });
 
-      it("should split fees correctly: 95% worker, 2% treasury, 2% ops, 1% verifier", async function () {
+      it("should split fees correctly: 95% worker, 4% multisig, 0% ops, 1% verifier", async function () {
         const treasuryBefore = await token.balanceOf(treasury.address);
         const opsBefore = await token.balanceOf(ops.address);
         const agentBefore = await token.balanceOf(agent.address);
@@ -293,12 +293,12 @@ describe("BasiliskEscrow", function () {
         const verifierAfter = await token.balanceOf(verifier.address);
 
         // 100 tokens @ 5% = 5 tokens total fee
-        // Treasury: 5 * 40% = 2
-        // Ops: 5 * 40% = 2
-        // Verifier: 5 - 2 - 2 = 1
+        // Multisig: 5 * 80% = 4
+        // Ops: 5 * 0% = 0
+        // Verifier: 5 - 4 - 0 = 1
         // Worker: 100 - 5 = 95
-        const expectedTreasury = ethers.parseUnits("2", 18);
-        const expectedOps = ethers.parseUnits("2", 18);
+        const expectedTreasury = ethers.parseUnits("4", 18);
+        const expectedOps = ethers.parseUnits("0", 18);
         const expectedVerifier = ethers.parseUnits("1", 18);
         const expectedWorker = ethers.parseUnits("95", 18);
 
@@ -334,10 +334,10 @@ describe("BasiliskEscrow", function () {
         const opsAfter = await token.balanceOf(ops.address);
 
         // Worker: 100 - 5 + 1 = 96
-        // Treasury: 2, Ops: 2
+        // Multisig: 4, Ops: 0
         expect(agentAfter - agentBefore).to.equal(ethers.parseUnits("96", 18));
-        expect(treasuryAfter - treasuryBefore).to.equal(ethers.parseUnits("2", 18));
-        expect(opsAfter - opsBefore).to.equal(ethers.parseUnits("2", 18));
+        expect(treasuryAfter - treasuryBefore).to.equal(ethers.parseUnits("4", 18));
+        expect(opsAfter - opsBefore).to.equal(ethers.parseUnits("0", 18));
       });
     });
 
@@ -393,12 +393,21 @@ describe("BasiliskEscrow", function () {
   // ── Reject Work ───────────────────────────────────────────────────
 
   describe("rejectWork", function () {
-    it("should transition to Disputed", async function () {
+    it("should transition to InProgress (back for revision)", async function () {
       await advanceToUnderReview();
       await escrow.connect(requester).rejectWork(JOB_ID, "Not satisfied");
       const job = await escrow.getJob(JOB_ID);
-      expect(job.status).to.equal(5n); // Disputed
-      expect(job.disputed).to.be.true;
+      expect(job.status).to.equal(1n); // InProgress
+    });
+
+    it("should allow agent to resubmit after rejection", async function () {
+      await advanceToUnderReview();
+      await escrow.connect(requester).rejectWork(JOB_ID, "Not satisfied");
+      // Agent can resubmit since status is back to InProgress
+      await escrow.connect(agent).submitDeliverable(JOB_ID, "Improved delivery");
+      const job = await escrow.getJob(JOB_ID);
+      expect(job.status).to.equal(2n); // UnderReview again
+      expect(job.deliverable).to.equal("Improved delivery");
     });
 
     it("should revert from non-requester", async function () {
@@ -406,6 +415,40 @@ describe("BasiliskEscrow", function () {
       await expect(
         escrow.connect(agent).rejectWork(JOB_ID, "reason")
       ).to.be.revertedWithCustomError(escrow, "Unauthorized");
+    });
+  });
+
+  // ── Open Dispute ────────────────────────────────────────────────
+
+  describe("openDispute", function () {
+    it("should transition to Disputed from UnderReview", async function () {
+      await advanceToUnderReview();
+      await escrow.connect(requester).openDispute(JOB_ID, "Escalating");
+      const job = await escrow.getJob(JOB_ID);
+      expect(job.status).to.equal(5n); // Disputed
+      expect(job.disputed).to.be.true;
+    });
+
+    it("should transition to Disputed from InProgress", async function () {
+      await createStandardJob();
+      await escrow.connect(agent).acceptJob(JOB_ID);
+      await escrow.connect(requester).openDispute(JOB_ID, "Escalating");
+      const job = await escrow.getJob(JOB_ID);
+      expect(job.status).to.equal(5n); // Disputed
+    });
+
+    it("should revert from non-requester", async function () {
+      await advanceToUnderReview();
+      await expect(
+        escrow.connect(agent).openDispute(JOB_ID, "reason")
+      ).to.be.revertedWithCustomError(escrow, "Unauthorized");
+    });
+
+    it("should revert from invalid status (Open)", async function () {
+      await createStandardJob();
+      await expect(
+        escrow.connect(requester).openDispute(JOB_ID, "reason")
+      ).to.be.revertedWithCustomError(escrow, "InvalidStatus");
     });
   });
 
@@ -450,10 +493,10 @@ describe("BasiliskEscrow", function () {
   describe("resolveDispute", function () {
     beforeEach(async function () {
       await advanceToUnderReview();
-      await escrow.connect(requester).rejectWork(JOB_ID, "Bad work");
+      await escrow.connect(requester).openDispute(JOB_ID, "Bad work");
     });
 
-    it("should resolve dispute with fee split (50/50 treasury/ops)", async function () {
+    it("should resolve dispute with fee split (all fee to treasury, ops 0%)", async function () {
       const treasuryBefore = await token.balanceOf(treasury.address);
       const opsBefore = await token.balanceOf(ops.address);
       const agentBefore = await token.balanceOf(agent.address);
@@ -468,13 +511,13 @@ describe("BasiliskEscrow", function () {
       const requesterAfter = await token.balanceOf(requester.address);
 
       // Fee: 100 * 500 / 10000 = 5 tokens
-      // Treasury: 5/2 = 2 (integer division)
-      // Ops: 5 - 2 = 3 (remainder)
+      // Ops: 5 * 0% = 0
+      // Treasury: 5 - 0 = 5 (remainder to multisig)
       // Remaining: 100 - 5 = 95
-      // Agent: 95 * 70 / 100 = 66.5 = 66 (integer division)
-      // Requester: 95 - 66 = 29
-      const expectedTreasury = ethers.parseUnits("2.5", 18);
-      const expectedOps = ethers.parseUnits("2.5", 18);
+      // Agent: 95 * 70 / 100 = 66.5
+      // Requester: 95 - 66.5 = 28.5
+      const expectedTreasury = ethers.parseUnits("5", 18);
+      const expectedOps = ethers.parseUnits("0", 18);
       const expectedAgent = ethers.parseUnits("66.5", 18);
       const expectedRequester = ethers.parseUnits("28.5", 18);
 
@@ -527,8 +570,8 @@ describe("BasiliskEscrow", function () {
       const result = await escrow.calculateFees(JOB_AMOUNT, true);
       expect(result.totalFee).to.equal(ethers.parseUnits("5", 18));
       expect(result.workerAmount).to.equal(ethers.parseUnits("95", 18));
-      expect(result.treasuryAmount).to.equal(ethers.parseUnits("2", 18));
-      expect(result.opsAmount).to.equal(ethers.parseUnits("2", 18));
+      expect(result.treasuryAmount).to.equal(ethers.parseUnits("4", 18));
+      expect(result.opsAmount).to.equal(ethers.parseUnits("0", 18));
       expect(result.verifierAmount).to.equal(ethers.parseUnits("1", 18));
     });
 
@@ -536,8 +579,8 @@ describe("BasiliskEscrow", function () {
       const result = await escrow.calculateFees(JOB_AMOUNT, false);
       expect(result.totalFee).to.equal(ethers.parseUnits("5", 18));
       expect(result.workerAmount).to.equal(ethers.parseUnits("96", 18));
-      expect(result.treasuryAmount).to.equal(ethers.parseUnits("2", 18));
-      expect(result.opsAmount).to.equal(ethers.parseUnits("2", 18));
+      expect(result.treasuryAmount).to.equal(ethers.parseUnits("4", 18));
+      expect(result.opsAmount).to.equal(ethers.parseUnits("0", 18));
       expect(result.verifierAmount).to.equal(0n);
     });
   });

@@ -17,8 +17,7 @@ import "./interfaces/IIdentityRegistry.sol";
  *
  *         Fee model (5% default, configurable):
  *           95% → Worker
- *           2%  → Treasury (buyback & burn)
- *           2%  → Operational costs
+ *           4%  → Multisig (team-managed)
  *           1%  → Verifier (or returned to worker as bonus if no verifier)
  */
 contract BasiliskEscrow is ReentrancyGuard, Ownable {
@@ -69,9 +68,11 @@ contract BasiliskEscrow is ReentrancyGuard, Ownable {
     // Constants
     // ========================================================================
 
+    /// @dev Intentionally stricter than Solana's MAX_FEE_BPS (10000). Acts as a safety
+    ///      cap since the platform fee is 500 bps (5%) with no plan to exceed 10%.
     uint16 public constant MAX_FEE_BPS = 1000; // 10% absolute max
-    uint8 public constant TREASURY_SHARE_PCT = 40;
-    uint8 public constant OPS_SHARE_PCT = 40;
+    uint8 public constant TREASURY_SHARE_PCT = 80;
+    uint8 public constant OPS_SHARE_PCT = 0;
     uint8 public constant VERIFIER_SHARE_PCT = 20;
 
     // ========================================================================
@@ -179,8 +180,8 @@ contract BasiliskEscrow is ReentrancyGuard, Ownable {
 
     /// @param _admin         Contract owner (can update config)
     /// @param _arbitrator    Dispute resolver
-    /// @param _treasury      Treasury wallet (buyback & burn)
-    /// @param _opsWallet     Operational costs wallet
+    /// @param _treasury      Multisig wallet (team-managed)
+    /// @param _opsWallet     Operations wallet (legacy, receives 0%)
     /// @param _feeBps        Fee in basis points (e.g. 500 = 5%)
     /// @param _identityReg   ERC-8004 Identity Registry address (address(0) to disable)
     constructor(
@@ -377,18 +378,37 @@ contract BasiliskEscrow is ReentrancyGuard, Ownable {
         }
 
         token.safeTransfer(treasury, treasuryShare);
-        token.safeTransfer(opsWallet, opsShare);
+        if (opsShare > 0) {
+            token.safeTransfer(opsWallet, opsShare);
+        }
         token.safeTransfer(agent, workerAmount);
 
         emit JobApproved(jobId, agent, workerAmount, treasuryShare, opsShare, verifierShare, rating);
     }
 
+    /// @notice Requester rejects work, sending it back for revision (agent can resubmit).
+    ///         Use openDispute to escalate to arbitration instead.
     function rejectWork(
         bytes32 jobId,
         string calldata reason
     ) external jobMustExist(jobId) onlyRequester(jobId) {
         Job storage job = jobs[jobId];
         if (job.status != JobStatus.UnderReview) revert InvalidStatus(JobStatus.UnderReview, job.status);
+
+        job.status = JobStatus.InProgress;
+
+        emit JobRejected(jobId, reason);
+    }
+
+    /// @notice Requester escalates a job to arbitration. Can be called when InProgress or UnderReview.
+    function openDispute(
+        bytes32 jobId,
+        string calldata reason
+    ) external jobMustExist(jobId) onlyRequester(jobId) {
+        Job storage job = jobs[jobId];
+        if (job.status != JobStatus.InProgress && job.status != JobStatus.UnderReview) {
+            revert InvalidStatus(JobStatus.InProgress, job.status);
+        }
 
         job.status = JobStatus.Disputed;
         job.disputed = true;
@@ -443,17 +463,19 @@ contract BasiliskEscrow is ReentrancyGuard, Ownable {
     ) private {
         IERC20 token = IERC20(tokenAddr);
 
-        // Fee still taken on disputes (treasury 50%, ops 50%, no verifier share)
+        // Fee still taken on disputes (all to multisig, no verifier share)
         uint256 totalFee = (amount * feeBps) / 10000;
-        uint256 treasuryShare = totalFee / 2;
-        uint256 opsShare = totalFee - treasuryShare; // remainder avoids rounding dust
+        uint256 opsShare = (totalFee * OPS_SHARE_PCT) / 100;
+        uint256 treasuryShare = totalFee - opsShare; // remainder to multisig
 
         uint256 remaining = amount - totalFee;
         uint256 agentAmount = (remaining * agentPercentage) / 100;
         uint256 requesterAmount = remaining - agentAmount;
 
         token.safeTransfer(treasury, treasuryShare);
-        token.safeTransfer(opsWallet, opsShare);
+        if (opsShare > 0) {
+            token.safeTransfer(opsWallet, opsShare);
+        }
 
         if (agentAmount > 0) {
             token.safeTransfer(agent, agentAmount);

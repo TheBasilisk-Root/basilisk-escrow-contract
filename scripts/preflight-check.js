@@ -26,14 +26,14 @@ const NATIVE_TOKENS = {
   sepolia: "ETH", baseSepolia: "ETH", arbitrumSepolia: "ETH", fuji: "AVAX",
 };
 
-// Minimum balance needed to deploy 4 contracts + buffer
+// Minimum balance needed to deploy 5 contracts (incl. MultiSig) + buffer
 const MIN_BALANCE = {
-  ethereum: "0.15",   // ~$450 at $3k/ETH
-  base: "0.005",      // ~$15 (L2, very cheap)
-  arbitrum: "0.008",  // ~$24 (L2)
-  avalanche: "3.0",   // ~$100 at $35/AVAX
-  sepolia: "0.1",     baseSepolia: "0.005",
-  arbitrumSepolia: "0.005", fuji: "1.0",
+  ethereum: "0.20",   // ~$600 at $3k/ETH (+multisig ~1.5M gas)
+  base: "0.007",      // ~$21 (L2, very cheap)
+  arbitrum: "0.012",  // ~$36 (L2)
+  avalanche: "4.0",   // ~$140 at $35/AVAX
+  sepolia: "0.15",    baseSepolia: "0.007",
+  arbitrumSepolia: "0.007", fuji: "2.0",
 };
 
 async function checkChain(networkName) {
@@ -163,11 +163,27 @@ async function main() {
   const envChecks = [
     ["DEPLOYER_PRIVATE_KEY", !!process.env.DEPLOYER_PRIVATE_KEY],
     ["ARBITRATOR_ADDRESS", !!process.env.ARBITRATOR_ADDRESS],
-    ["TREASURY_ADDRESS", !!process.env.TREASURY_ADDRESS],
     ["OPS_WALLET_ADDRESS", !!process.env.OPS_WALLET_ADDRESS],
+    ["MULTISIG_SIGNERS", !!process.env.MULTISIG_SIGNERS],
+    ["MULTISIG_THRESHOLD", !!process.env.MULTISIG_THRESHOLD],
   ];
   for (const [name, ok] of envChecks) {
     console.log(`  ${ok ? GREEN + "✓" : RED + "✗"} ${name}${RESET}`);
+  }
+
+  // Validate MULTISIG_SIGNERS format
+  if (process.env.MULTISIG_SIGNERS) {
+    const msSigners = process.env.MULTISIG_SIGNERS.split(",").map((s) => s.trim());
+    const msThreshold = parseInt(process.env.MULTISIG_THRESHOLD || "5", 10);
+    const validAddrs = msSigners.every((a) => /^0x[0-9a-fA-F]{40}$/.test(a));
+    const uniqueAddrs = new Set(msSigners.map((a) => a.toLowerCase())).size === msSigners.length;
+
+    console.log(`\n${BOLD}MultiSig Config:${RESET}`);
+    console.log(`  ${validAddrs ? GREEN + "✓" : RED + "✗"} ${msSigners.length} signer addresses ${validAddrs ? "valid" : "INVALID"}${RESET}`);
+    console.log(`  ${uniqueAddrs ? GREEN + "✓" : RED + "✗"} All addresses unique${RESET}`);
+    console.log(`  ${msThreshold > 0 && msThreshold <= msSigners.length ? GREEN + "✓" : RED + "✗"} Threshold: ${msThreshold}-of-${msSigners.length}${RESET}`);
+
+    if (!validAddrs || !uniqueAddrs) allReady = false;
   }
 }
 
